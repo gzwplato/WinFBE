@@ -118,7 +118,7 @@ Function clsApp.DocumentPtrExists( byval pDoc as clsDocument ptr) As boolean
             Next
          end if
       end with
-   next   
+   next
    function = false
 End Function
 
