@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -39,19 +39,18 @@ function UpdateToDoListview() as long
    ListView_DeleteAllItems( hLV )
    dim as long n = 0
 
-   dim pData as DBENGINE_DATA ptr
+   dim pData as DB2_DATA ptr
    
-   gdb.dbRewind()
+   gdb2.dbRewind4DB()
    do 
-      pData = gdb.dbGetNext
+      pData = gdb2.dbGetNext4DB
       if pData = 0 THEN exit do
-      if pData->dataType <> DB_TODO_ITEM THEN continue do
-      if AfxFileExists(pData->diskFilename) THEN
-         FF_ListView_InsertItem( hLV, n, 0, WStr(pData->nLineNum) ) 
-         FF_ListView_InsertItem( hLV, n, 1, WStr(pData->diskFilename) )
-         FF_ListView_InsertItem( hLV, n, 2, WStr(pData->data1) ) 
-         n = n + 1
-      end if
+      if pData->id <> DB2_TODO THEN continue do
+      IF pData->deleted=TRUE THEN  continue do
+      FF_ListView_InsertItem( hLV, n, 0, WStr(pData->nStartLineNum) ) 
+      FF_ListView_InsertItem( hLV, n, 1, WStr(pData->pFileDATA->fileName) )
+      FF_ListView_InsertItem( hLV, n, 2, WStr(pData->ElementValue) ) 
+      n = n + 1
    loop
 
    function = 0
@@ -63,7 +62,7 @@ END FUNCTION
 ' ========================================================================================
 function DoSearchFileSelected() as LONG
 
-   dim as long nCursel, f1, f2, nSize, nLineNum
+   dim as long nCursel, f1, f2, nSize, nStartLineNum
    dim wzText as wstring * MAX_PATH
    dim wzFilename as wstring * MAX_PATH
 
@@ -81,7 +80,7 @@ function DoSearchFileSelected() as LONG
       f2 = instr(wzText, ")")
       if f2 THEN
          wzText = left(wzText, f2-1) 
-         nLineNum = val(wzText)
+         nStartLineNum = val(wzText)
       end if
    END IF
 
@@ -97,7 +96,8 @@ function DoSearchFileSelected() as LONG
                            0 )         ' pDocIn
 
    if pDoc THEN
-      SciExec( pDoc->hWindow, SCI_GOTOLINE, nLineNum-1, 0)
+      dim as hwnd hEdit = pDoc->hWndActiveScintilla
+      SciExec( hEdit, SCI_GOTOLINE, nStartLineNum-1, 0)
    END IF
 
    function = 0
@@ -401,7 +401,7 @@ Function frmOutput_Show( ByVal hWndParent As HWnd ) As LRESULT
       pWindow->AddControl("LISTVIEW", , IDC_FRMOUTPUT_LISTVIEW, "", 0, 0, 0, 0, _
       WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or LVS_REPORT Or LVS_SHOWSELALWAYS or LVS_SINGLESEL, _
       WS_EX_LEFT Or WS_EX_RIGHTSCROLLBAR, , _
-      Cast(WNDPROC, @frmOutput_Listview_SubclassProc), IDC_FRMOUTPUT_LISTVIEW, Cast(DWORD_PTR, @pWindow))
+      Cast(SUBCLASSPROC, @frmOutput_Listview_SubclassProc), IDC_FRMOUTPUT_LISTVIEW, Cast(DWORD_PTR, @pWindow))
                                      
    ' Make the listview header flat
    ListView_MakeHeaderFlat(hLV)
@@ -429,7 +429,7 @@ Function frmOutput_Show( ByVal hWndParent As HWnd ) As LRESULT
       pWindow->AddControl("LISTVIEW", , IDC_FRMOUTPUT_LVTODO, "", 0, 0, 0, 0, _
       WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or LVS_REPORT Or LVS_SHOWSELALWAYS or LVS_SINGLESEL, _
       WS_EX_LEFT Or WS_EX_RIGHTSCROLLBAR, , _
-      Cast(WNDPROC, @frmOutput_Listview_SubclassProc), IDC_FRMOUTPUT_LVTODO, Cast(DWORD_PTR, @pWindow))
+      Cast(SUBCLASSPROC, @frmOutput_Listview_SubclassProc), IDC_FRMOUTPUT_LVTODO, Cast(DWORD_PTR, @pWindow))
                                      
    ' Make the listview header flat
    ListView_MakeHeaderFlat(hLV)

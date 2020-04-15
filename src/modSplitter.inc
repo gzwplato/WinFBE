@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -68,13 +68,11 @@ End Function
 ' Process WM_LBUTTONUP message for splitter
 ' ========================================================================================
 Function Splitter_OnLButtonUp() As BOOLEAN
-
-   If gApp.bDragActive Then
+   if gApp.bDragActive then
+      ReleaseCapture()
       gApp.bDragActive = False 
       gApp.hWndPanel = 0
-      ReleaseCapture()
-   End If
-   
+   end if
    Function = 0
 End Function
 
@@ -117,6 +115,9 @@ Function Splitter_OnMouseMove() As BOOLEAN
          SetWindowPos HWND_FRMEXPLORER, 0, 0, 0, nWidth, rc.Bottom - rc.Top, SWP_NOMOVE Or SWP_NOZORDER
          frmMain_PositionWindows(HWND_FRMMAIN)
          AfxDoEvents   ' allow screen to repaint
+         if ( GetAsyncKeyState(VK_LBUTTON) and &H8000 )=0 then 
+            Splitter_OnLButtonUp()
+         endif
          Exit Function
       End If
    End If
@@ -143,6 +144,9 @@ Function Splitter_OnMouseMove() As BOOLEAN
          rc.Top = rc.Top + nDiff
          SetWindowPos HWND_FRMOUTPUT, 0, 0, 0, rc.Right - rc.Left, rc.Bottom-rc.Top, SWP_NOMOVE Or SWP_NOZORDER
          frmMain_PositionWindows(HWND_FRMMAIN)
+         if ( GetAsyncKeyState(VK_LBUTTON) and &H8000 )=0 then 
+            Splitter_OnLButtonUp()
+         endif
          Exit Function
       End If
    End If

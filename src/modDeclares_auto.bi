@@ -1,9 +1,38 @@
+declare function IsPropertyExists( byval pCtrl as clsControl ptr, byval wszPropName as CWSTR) as boolean
+declare function GetActivePropertyPtr() as clsProperty ptr
+declare function GetActiveEventPtr() as clsEvent ptr
+declare function GenerateFormMetaData( byval pDoc as clsDocument ptr ) as long
+declare function GenerateFormCode( byval pDoc as clsDocument ptr ) as long
+declare function AttachDefaultControlProperties( byval pCtrl as clsControl ptr ) as Long
+declare function GetControlType( byval wszControlName as CWSTR ) as long
+declare function GetControlName( byval nControlType as long ) as CWSTR
+declare function IsDesignerView( byval pDoc as clsDocument ptr ) as Boolean
+declare function RemoveComments( byval st as string) as string
+declare function MaskStringCharacters( byval st as string) as string
+declare function ChangeCommentCharacters( byval st as string) as string
+declare Function DisplayPropertyList( byval pDoc as clsDocument ptr ) as Long
+declare function KeyboardResizeControls( byval pDoc as clsDocument ptr, byval vKeycode as long ) as Long
+declare function KeyboardMoveControls( byval pDoc as clsDocument ptr, byval vKeycode as long ) as Long
+declare function KeyboardCycleActiveControls( byval pDoc as clsDocument ptr, byval vKeycode as long ) as Long
+declare function GetControlRECT( byval pCtrl as clsControl ptr ) as RECT
+declare function ApplyControlProperties( byval pDoc as clsDocument ptr, byval pCtrl as clsControl ptr ) as Long
+declare function GetControlProperty( byval pCtrl as clsControl ptr, byval wszPropName as CWSTR) as CWSTR
+declare function SetControlProperty( byval pCtrl as clsControl ptr, byval wszPropName as CWSTR, byval wszPropValue as CWSTR) as long
+declare function SetControlEvent( byval pCtrl as clsControl ptr, byval wszEventName as CWSTR, byval bIsSelected as boolean ) as long
+declare function GetActiveToolboxControlName() as CWSTR
+declare function GetActiveToolboxControlClassName() as CWSTR
+declare function GetActiveToolboxControlType() as long
+declare function CreateToolboxControl( byval pDoc as clsDocument ptr, byval ControlType as long, byref rcDraw as RECT) as clsControl ptr
+declare function GetActiveToolboxControl() as Long
+declare function SetActiveToolboxControl( byval ControlType as long ) as Long
+declare Function frmVDToolbox_Show( ByVal hWndParent As HWnd, ByVal nCmdShow As Long = 0) As Long
 declare FUNCTION Control_SubclassProc( BYVAL hwnd AS HWND, BYVAL uMsg AS UINT, BYVAL wParam AS WPARAM, BYVAL lParam AS LPARAM, BYVAL uIdSubclass AS UINT_PTR, BYVAL dwRefData AS DWORD_PTR ) AS LRESULT
 declare Function DesignerMain_WndProc( ByVal HWnd As HWnd, ByVal uMsg As UINT, ByVal wParam As WPARAM, ByVal lParam As LPARAM) As LRESULT
 declare Function DesignerFrame_WndProc( ByVal HWnd As HWnd, ByVal uMsg As UINT, ByVal wParam As WPARAM, ByVal lParam As LPARAM) As LRESULT
 declare Function DesignerForm_WndProc( ByVal HWnd As HWnd, ByVal uMsg As UINT, ByVal wParam As WPARAM, ByVal lParam As LPARAM) As LRESULT
+declare Function Lasso_WndProc( ByVal HWnd As HWnd, ByVal uMsg As UINT, ByVal wParam As WPARAM, ByVal lParam As LPARAM) As LRESULT
 declare function ParseLogForError( byref wsLogSt as CWSTR, byval bAllowSuccessMessage as Boolean, Byval wID as long) as Boolean
-declare SUB RedirConsoleToFile( byref szExe AS zstring, byref szCmdLine AS zstring, byref sConsoleText AS string)
+declare SUB RedirConsoleToFile( byref szExe AS wstring, byref szCmdLine AS wstring, byref sConsoleText AS string)
 Declare Function GetTemporaryFilename( byref wszFolder as wstring, BYREF wszExtension AS wSTRING) AS string
 Declare Function GetFontCharSetID(ByREF wzCharsetName As CWSTR ) As Long
 Declare Function RemoveDuplicateSpaces( byref sText as const string) as string
@@ -15,12 +44,13 @@ Declare Function UnicodeToUtf8(byval pswzUnicode as wstring ptr) AS STRING
 Declare Function FileEncodingTextDescription(byval FileEncoding as long) as CWSTR
 Declare Function GetFileToString( byref wszFilename as const wstring, byref txtBuffer as string, byval pDoc as clsDocument ptr) as boolean
 Declare Function ConvertTextBuffer( byval pDoc as clsDocument ptr, byval FileEncoding as long ) as Long
-Declare Function OpenSelectedDocument( byval pDoc as clsDocument ptr, byref wszFunctionName as WSTRING ) as long
+Declare Function OpenSelectedDocument( byval pDoc as clsDocument ptr, byref wszName as WSTRING, ByVal hCurrentNode As HTREEITEM =0) as long
 Declare Function ProcessToCurdrive( ByRef wzFilename As CWSTR ) As CWSTR
 Declare Function ProcessFromCurdrive( ByRef wzFilename As CWSTR ) As CWSTR
 Declare Function Treeview_RemoveCheckBox( byval hTree as hwnd, byval hNode as HTREEITEM) as long
 Declare Function FF_TreeView_InsertItem( ByVal hWndControl As HWnd, ByVal hParent As HANDLE, ByRef TheText As WString, ByVal lParam As LPARAM = 0, ByVal iImage As Long = 0, ByVal iSelectedImage As Long = 0 ) As HANDLE
 Declare Function FF_TreeView_GetlParam( ByVal hWndControl As HWnd, ByVal hItem As HANDLE ) As Long
+Declare Function FF_TreeView_GetiImage( ByVal hWndControl As HWnd, ByVal hItem As HANDLE ) As Long
 Declare Function FF_TreeView_SetCheckState( ByVal hWndControl As HWnd, ByVal hItem As HANDLE, ByVal fCheck As Boolean ) As BOOLEAN
 Declare Function FF_TreeView_GetCheckState( ByVal hWndControl As HWnd, ByVal hItem As HANDLE ) As BOOLEAN
 Declare Function FF_TreeView_SetlParam (ByVal hWndControl as HWnd, ByVal hItem as HANDLE, ByVal lParam as Long) as Long
@@ -33,8 +63,7 @@ Declare Function FF_ListView_InsertItem( ByVal hWndControl As HWnd, ByVal iRow A
 Declare Function FF_ListView_GetItemText( ByVal hWndControl As HWnd, ByVal iRow As Long, ByVal iColumn As Long, ByVal pwszText As WString Ptr, ByVal nTextMax As Long ) As BOOLEAN
 Declare Function FF_ListView_SetItemText( ByVal hWndControl As HWnd, ByVal iRow As Long, ByVal iColumn As Long, ByVal pwszText As WString Ptr, ByVal nTextMax As Long ) As Long
 Declare Function FF_ListView_GetlParam( ByVal hWndControl As HWnd, ByVal iRow As Long ) As LPARAM
-Declare Function LoadLocalizationFile( ByVal pwszName As WString Ptr ) As BOOLEAN
-Declare Function CreateDeclaresFile( ByRef sFilename As Const String ) As LONG
+Declare Function LoadLocalizationFile( Byref wszFileName As CWSTR ) As BOOLEAN
 Declare Function GetProcessImageName( ByVal pe32w As PROCESSENTRY32W Ptr, ByVal pwszExeName As WString Ptr ) As Long
 Declare Function IsProcessRunning( ByVal pwszExeFileName As WString Ptr ) As BOOLEAN
 Declare Function GetRunExecutableFilename() as CWSTR
@@ -42,9 +71,9 @@ Declare Function Splitter_OnLButtonDown() As BOOLEAN
 Declare Function Splitter_OnLButtonUp() As BOOLEAN
 Declare Function Splitter_OnMouseMove() As BOOLEAN
 Declare Function IsPreparsedFile( byref sFilename as string ) as boolean
-Declare Function GetIncludeFilename( byref sFilename as string, byref sLine as const string ) as STRING
+Declare Function GetIncludeFilename( byref sFilename as CWSTR, byref sLine as string ) as CWSTR
 Declare Function ScintillaGetLine( byval pDoc as clsDocument ptr, ByVal nLine As Long ) As String
-Declare Function ParseDocument( byval idx as long, byval pDoc as clsDocument ptr, byval sFilename as string ) As Long
+Declare Function ParseDocument( byval idx as long, byval pDoc as clsDocument ptr, byval sFilename as CWSTR) As Long
 Declare Function SetCompileStatusBarMessage( byref wszText as const wstring, byval hIconCompile as HICON ) as LRESULT
 Declare Function code_Compile( ByVal wID As Long ) As BOOLEAN
 Declare Function RunEXE( ByRef wszFileExe As CWSTR, ByRef wszParam As CWSTR ) As Long
@@ -71,9 +100,8 @@ Declare Function OpenMRUProjectFile( ByVal HWnd As HWnd, ByVal wID As Long, ByVa
 Declare Function UpdateMRUProjectMenu( ByVal hMenu As HMENU ) As Long
 Declare Function UpdateMRUProjectList( ByVal wzFilename As WString Ptr ) As Long
 Declare Function FormatCodetip( byval strCodeTip as string ) as STRING
-Declare Function ShowCodetip() as BOOLEAN
-Declare Function ShowAutocompleteList() as BOOLEAN
-Declare Function ShowTYPEAutocompleteList() as BOOLEAN
+declare function ShowCodetip( byval pDoc as clsDocument ptr) as BOOLEAN
+Declare Function ShowAutocompleteList(byval Notification as long = 0) as BOOLEAN
 Declare Function frmHotImgBtn_IsEnabled( ByVal HWnd As HWnd ) As boolean
 Declare Function frmHotImgBtn_Enabled( ByVal HWnd As HWnd, ByVal fEnabled as BOOLEAN ) As Long
 Declare Function frmHotImgBtn_SetBackColors( ByVal HWnd As HWnd, ByVal clrNormal As COLORREF, byval clrHot as COLORREF ) As Long
@@ -235,14 +263,14 @@ Declare Function OnCommand_ProjectNew( ByVal HWnd As HWnd ) As LRESULT
 Declare Function OnCommand_ProjectOpen( ByVal HWnd As HWnd ) As LRESULT
 Declare Function frmMain_OpenFileSafely( ByVal HWnd As HWnd, ByVal bIsNewFile As BOOLEAN, ByVal bIsTemplate As BOOLEAN, _
                            ByVal bShowInTab As BOOLEAN, byval bIsInclude as BOOLEAN, ByVal pwszName As WString Ptr, _
-                           ByVal pDocIn As clsDocument Ptr, byval bIsDesigner as Boolean = false ) As clsDocument Ptr
+                           ByVal pDocIn As clsDocument Ptr, byval bIsDesigner as Boolean = false, byval ProjectFileType as Long=-1,byval idx as Long=-1) As clsDocument Ptr
 Declare Function OnCommand_FileNew( ByVal HWnd As HWnd ) As LRESULT
 Declare Function OnCommand_FileOpen( ByVal HWnd As HWnd ) As LRESULT
 Declare Function OnCommand_OpenIncludeFile( ByVal HWnd As HWnd ) As LRESULT
 Declare Function OnCommand_FileSave( ByVal HWnd As HWnd, ByVal bSaveAs As BOOLEAN = False) As LRESULT
 Declare Function OnCommand_FileSaveDeclares( ByVal HWnd As HWnd ) As LRESULT
 Declare Function OnCommand_FileSaveAll( ByVal HWnd As HWnd ) As LRESULT
-Declare Function OnCommand_FileClose( ByVal HWnd As HWnd, ByVal bCloseAll As BOOLEAN = False ) As LRESULT
+Declare Function OnCommand_FileClose( ByVal HWnd As HWnd, ByVal veFileClose As eFileClose = EFC_CLOSECURRENT ) As LRESULT
 Declare Function frmMain_OnCreate(ByVal HWnd As HWnd, ByVal lpCreateStructPtr As LPCREATESTRUCT) As BOOLEAN
 Declare Function frmMain_OnSize(ByVal HWnd As HWnd, ByVal state As UINT, ByVal cx As Long, ByVal cy As Long) As LRESULT
 Declare Function frmMain_OnCommand(ByVal HWnd As HWnd, ByVal id As Long, ByVal hwndCtl As HWnd, ByVal codeNotify As UINT) As LRESULT
@@ -256,3 +284,17 @@ Declare Function frmMain_TabCtl_SubclassProc ( ByVal HWnd As HWnd, ByVal uMsg As
 Declare Function frmMain_WndProc( ByVal HWnd As HWnd, ByVal uMsg As UINT, ByVal wParam As WPARAM, ByVal lParam As LPARAM ) As LRESULT
 Declare Function frmMain_Show( ByVal hWndParent As HWnd, ByVal nCmdShow As Long = 0 ) As Long
 Declare Function WinMain( ByVal hInstance As HINSTANCE, ByVal hPrevInstance As HINSTANCE, ByVal szCmdLine As ZString Ptr, ByVal nCmdShow As Long ) As Long
+Declare Function ImageIndex4ExplorerTreeview( ByVal pDoc As clsDocument Ptr ) As long
+Declare Function WStrIsEqual(Byref lpWord As wString,Byref lpList As wString,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+Declare Function WStrNIsEqual(Byref lpWord As wString,Byref lpList As wString,Byref Size As long,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+Declare Function StrIsEqual(Byref lpWord As String,Byref lpList As String,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+Declare Function StrNIsEqual(Byref lpWord As String,Byref lpList As String,Byref Size As long,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+Declare sub ChangeImage4ExplorerTreeview2doc( ByVal pDoc As clsDocument Ptr )
+Declare sub ChangeImage4ExplorerTreeview2db(ByVal hWndControl As HWnd,  ByVal hNode As HTREEITEM,  ByVal DB2ID as LONG )
+Declare function GetClsDocument4ExplorerTreeview( ByVal hWndControl As HWnd, byVal hNode As HTREEITEM ) as clsDocument ptr
+Declare function CreateName4ExplorerTreeview(ByVal hWndControl As HWnd,byref ReturnValue as WSTRing, ByVal hCurrentNode As HTREEITEM =0) as LONG
+Declare FUNCTION AfxStrRemoveWithMark (BYREF wszMainStr AS CONST WSTRING, BYREF wszDelim1 AS CONST WSTRING, BYREF wszDelim2 AS CONST WSTRING, BYREF MarkKeys AS CONST WSTRING="", BYVAL fRemoveAll AS BOOLEAN = FALSE, BYVAL IsInstrRev AS BOOLEAN = FALSE) AS CWSTR
+Declare FUNCTION AfxStrMid (BYREF wszMainStr AS CONST WSTRING, BYREF wszDelim1 AS CONST WSTRING, BYREF wszDelim2 AS CONST WSTRING, BYVAL Index AS long = 1) AS CWSTR
+Declare function CheckIsDoc4ExplorerTreeview( ByVal hWndControl As HWnd, byVal hNode As HTREEITEM ) as Boolean
+Declare function GetProjectIndex4ExplorerTreeview( ByVal hWndControl As HWnd, byVal hNode As HTREEITEM ) as long
+Declare function GetProjecthNode4ExplorerTreeview( ByVal hWndControl As HWnd, byVal hNode As HTREEITEM ) as HTREEITEM

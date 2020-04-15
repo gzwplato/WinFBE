@@ -1,3 +1,195 @@
+Version 1.8.1 (October 7, 2018)
+- Fixed: Regression causing build combobox to immediately close when clicked.
+- Changed: Updated the Spanish language file (thanks Jose Roca).
+
+Version 1.8.0 (October 6, 2018)
+- Added: Merged pull request 7c5fb4d from skyfishtb. Parsing of ENUM and REDIM.
+- Added: Delete any previously existing compile output file (ie. .EXE, .DLL, .a) so it will not exist should the compile fail.
+- Added: Code editor Calltips for the ListBox control.
+- Fixed: Updated gcc.exe to correct 64 version.
+- Fixed: Corrected libexec subfolder names for 32/64 bit versions of cc1.exe (part of the gcc toolchain).
+- Changed: Updated Italian language file (thanks Massimiliano).
+- Changed: Updated German language file (thanks Joerg Buckel).
+
+Version 1.7.9 (September 1.7.9)
+- Fixed: Relative paths in User Tools commands failing after compiles (a compile would change current folder).
+- Fixed: Per 1.7.8, accidentally neglected to include latest FBC nightly build and GCC 8.1. It is now included in 1.7.9.
+
+Version 1.7.8 (September 4, 2018)
+- Added: Resulting file size of successful compiled EXE now shows in the status bar.
+- Fixed: Compile error output not correctly parsed in cases where filenames contain embedded parenthesis.
+- Fixed: Situation where editing property and switching to different control could cause the property value to transfer to that control incorrectly.
+- Changed: FB 32/64 compilers updated to Sept 2, 2018, nightly build.
+- Changed: GCC compiler updated to version 8.1.
+- Changed: Merged both 32 and 64 bit FB compilers into one folder.
+- Changed: Updated code (WinFBE, WinFormsX, WinFBX) to prevent warnings due to stricter CAST type checking in latest FB nightly build compiler.
+- Changed: Successful compile popup messagebox will now display in cases where only compiler warnings (and no errors) exist.
+- Changed: Environment option "Hide successful compile results message" changed to "Hide compile results message (popup)". Non-English language files will need to be updated.
+
+Version 1.7.7 (August 27, 2018)
+- Added: Merged pull request from skyfish4tb for additional top tab control closing options. Thanks!
+- Added: OptionButton and Frame codetips.
+- Added: Form Initialize event.
+- Changed: Control refresh/repaint called when Text property changed.
+- Fixed: Regression: Ctrl/Shift Arrow keys not moving/resizing controls in designer.
+- Fixed: Regression: GPF when ListBox row selection changed.
+- Fixed: Compiles with only warnings (no errors) will now allow the resulting EXE to execute.
+
+Version 1.7.6 (August 26, 2018)
+- Added: Grab handles for locked controls/form now show using red color.
+- Added: BackColorHot property for Button controls.
+- Fixed: Label mouse double click caused a GPF.
+- Fixed: Changed all MID function code to use ** with CWSTR variables.
+- Fixed: Align and/or Resize for groups of controls was not respecting the Locked status.
+- Fixed: Center in form horizontally/vertically was not correctly accounting for High DPI resolutions.
+
+Version 1.7.5 (August 22, 2018)
+- Added: OptionButton toolbox control.
+- Added: Frame toolbox control.
+- Added: Implemented logic for controls "Locked" property.
+- Added: Implemented logic for top menu option "Lock Controls" (this is a global override locking the form and all controls on the form).
+- Added: Pasting controls automatically increments the TabIndex property for the newly created controls.
+- Added: Entering an existing TabIndex number will automatically re-number all higher TabIndex value controls.  
+- Changed: Greatly refactored the underlying WinFormsX code dealing with the message pump and keyboard input handling and modal/modeless forms.
+- Fixed: Pasting controls was not immediately setting the form dirty thereby not saving the changes.
+- Fixed: Dropdown combobox in ToolBox that displays list of controls for the form was not updating when controls deleted from the form.
+- Fixed: AutoInsert inserting "End Function" and/or "End Sub" in situations when it should not. Fix from 1.7.4 failed on "FUNCTION =" lines.
+- Fixed: Keyboard focus is now correctly restored when a popup modal form is closed.
+ 
+Version 1.7.4 (August 12, 2018)
+- Added: Loading of WinAPI codetips (\settings\codetips_winapi.ini).
+- Changed: Removed Bookmark color and WinAPI Keywords color. Basic themes will automatically be updated. USER DEFINED THEMES WILL NEED TO BE MANUALLY UPDATED. Sorry.
+- Changed: More specific error message for type of Help file not found.
+- Changed: Replaced FB's COMMAND with unicode aware replacement AfxCommand.
+- Changed: Commented out Scintilla code for SCI_SETFONTQUALITY and SCI_SETTECHNOLOGY to see if it helps in displaying older *.fon bitmap font files.
+- Fixed: User Tool problem assigning accelerator key 
+- Fixed: "Save Declares File" menu option was not outputting SUB declarations (only FUNCTIONS).
+- Fixed: AutoInsert inserting "End Function" and/or "End Sub" in situations when it should not.
+- Fixed: Calltips disappearing after typing characters past the opening "(" that triggered the codetip.
+- Fixed: Corrected triggers for Autocomplete popups.
+- Fixed: Button TextAlign property not having effect at runtime.
+- Fixed: Locked property causing compile time error (property still not implemented yet however).
+- Fixed: Form Resize event was not firing after the Load event.
+- Fixed: Greatly speed up the Replace All for large documents with many phrases to be replaced.
+
+Version 1.7.3 (August 8, 2018)
+- Added: Function names will now display for code files that do not have a disk filename (especially useful for QuickRun files).
+- Changed: Updated Italian language file.
+- Changed: Changing back colors of a button now also calls button refresh.
+- Changed: Temporarily removed some Properties that have not been fully implemented in order to prevent compile time errors.
+- Fixed: Compiler output listview now properly shows Form file error lines (adjusted to remove metadata and codegen lines).
+- Fixed: Help file displaying "Not found" error for fully qualified path names.
+- Fixed: TextBox WordWrap property was coded incorrectly.
+- Fixed: TextBox HideSelection property was coded incorrectly.
+- Fixed: TextBox CharacterCasing property not correctly referencing the CharacterCase Enum.
+- Fixed: TextBox TextScrollBars property changes not reflected visually in the visual designer.
+- Fixed: TextBox AcceptTab property was not fully implemented.
+
+Version 1.7.2 (August 3, 2018) 
+- Added: Completed ListBox control documentation and tips.
+- Fixed: Regression from 1.7.1 preventing text input into PropertyList items (Name, Text, etc).
+
+Version 1.7.1 (August 2, 2018)
+- Added: TextBox TextChanged event.
+- Added: (ToolBox) Event descriptions for Destroy, GotFocus, LostFocus, MouseEnter, MouseHover, MouseLeave.
+- Added: (ToolBox) Ability to use keyboard arrow keys to traverse list of Events for a control.
+- Added: (ToolBox) Ability to use keyboard Space key to toggle select/unselect of an Event for a control.
+- Added: BackColorDown to popup codetips for Button objects.
+- Added: Duplicate check for Form and Control names.
+- Added: Check to remove invalid characters from Form and Control names.
+- Added: Documentation for the global/shared Application variable.
+- Added: wfxApplication class codetips (for the global Application variable).
+- Added: wfxColors class codetips (for the global Colors variable)
+- Added: Changing a form or control name will automatically any code that references the old name.
+- Added: Compiler Setup fields for WinFBX Help file.
+- Added: New top menu Help options for WinAPI and WinFBX
+- added: Pressing "DELETE" key will now delete the selected group of controls. 
+- Changed: Removed the "On" prefix from the documentation for Methods related to forms and controls.
+- Fixed: SelectAll not selecting all code text for visual designer forms when the code editor is active.
+- Fixed: If visual design form had focus, typing characters would enter those characters into the code editor.
+
+Version 1.7.0 (July 29, 2018)
+- Added: Button BackColorDown property added. The ThemeSupport property must be set to False.
+- Fixed: Right click mouse popup menu not showing in code editor of a visual designer form.
+- Fixed: Added a Relative path check for Help files.
+ 
+Version 1.6.9 (July 27, 2018)
+- Changed: Removed the Preparse database and replaced with static database codetips_winfbx.ini
+- Fixed: Some TYPE elements not showing in popup codetips (eg. Text property for Button).
+
+Version 1.6.8 (July 25, 2018)
+- Added: Form KeyPreview property.
+- Fixed: Ability to unset any previously set button for the form properties: AcceptButton, CancelButton.
+- Fixed: Positioning to wrong error line when error in visual designer code file.
+- Fixed: Incorrect code generation for CheckBox BackColor.
+- Fixed: Color System MenuText had a typo causing error during compilation.
+- Fixed: QuickRun was not working for Form source files.
+- Fixed: Changed RedirConsoleToFile function to use WSTRING rather than ZSTRING.
+- Fixed: Changed CreateChildProcess function to use WSTRING rather than ZSTRING.
+- Fixed: Form reload when source code changed by external editor.
+- Fixed: GPF during cut or copy operation if Form is part of the selected group of controls.
+
+Version 1.6.7 (July 22, 2018)
+- Fixed: Regression from 1.6.6 related to project loading and duplicate event handlers.
+
+Version 1.6.6 (July 22, 2018)
+- Fixed: Many changes related to the experimental visual designer.
+
+Version 1.6.5 (July 15, 2018)
+- Added: Visual Designer enabled but it is limited and experimental at this point.
+- Added: FreeBASIC Compiler nightly build July 3, 2018 (32 and 64 bit versions).
+- Added: Extended style to the Explorer treeview to give it modern looking icons rather than +/- boxes.
+- Changed: Removed WinFBX include paths from "Environment Options" / "Compiler Setup". No longer needed.
+- Fixed: Quick Run was failing when invoked against unicode editor files. Temp file now output using correct unicode settings.
+
+Version 1.6.4 (June 3, 2018)
+- Fixed: Tweak code related Codetips to fix several regressions preventing TYPE elements from displaying.
+
+Version 1.6.3 (June 2, 2018)
+- Added: WinFBE_Suite package as an attached binary release. Includes all-in-one package to start coding immediately. Editor, compiler, help files, include files.
+- Added: Automatically create and use preparsed sub/function definitions from the compiler's \inc folders. The database is stored in the "settings" folder in files "preparse_timestamps.ini" and "preparse_database.ini".
+- Added: French language localization file. Thanks to Marc Pons.
+- Changed: If option to display Codetips is OFF, then files are not parsed for anything other than Subs/Functions.
+- Fixed: Regression adding incorrect leading spaces for IF/THEN autoinsert blocks.
+
+Version 1.6.2 (May 27, 2018)
+- Fixed: Conflicting issue with AutoComplete and AutoIndent config flags.
+
+Version 1.6.1 (May 26, 2018)
+- Added: Help/About now shows if running 32 or 64 bit version of WinFBE.
+- Fixed: Explorer treeview and popup Function List were not displaying SUB routines.
+- Fixed: Autoinsert was testing for AutoIndent config flag rather than AutoComplete flag.
+
+Version 1.6.0 (April 19, 2018)
+- Added: italian.lang lanuage file thanks to Massimiliano Argenti from the PlanetSquires forum.
+- Added: czech.lang lanuage file thanks to Norcom (Robert) from the PlanetSquires forum.
+- Fixed: QuickRun in top menu now correctly disabled when a Project is active.
+- Fixed: Endless loop if file remained opened in editor but deleted manually from disk. 
+- Fixed: Corrected instances where the Autocomplete popup list would appear when it should not.
+- Fixed: Corrected saving/restoring Explorer width when moving between high/low resolution monitor settings.
+
+Version 1.5.9 (February 6, 2018)
+- Added: '#RESOURCE "resourcefilename" compiler directive to be embedded in the code of the main file being compiled.
+
+Version 1.5.8 (February 5, 2018)
+- Fixed: In non-project situations, file would get loaded into File Explorer multiple times after each F4 Function selection.
+
+Version 1.5.7 (February 4, 2018)
+- Added: Dual pane split screen file editing.
+- Added: Multiline comment support to scintilla dll editing component. /'  '/
+- Added: Additional error check to report failed GoRC resource file compiles.
+- Added: Autoinsert completion for CONSTRUCTOR, DESTRUCTOR, ENUM constructs.
+- Changed: Removed WinFBX Library from the distribution. Get it from: https://github.com/JoseRoca/WinFBX
+- Changed: Better handling of auto insert of IF/THEN single and and other mulitline statements.
+- Changed: Much improved autocomplete and codetips to handle shared/local variables and TYPE's.
+- Changed: Latest scintilla dll for Win32 and Win64.
+- Changed: Scaled some icons to display larger at higher screen resolutions.
+- Fixed: Popup autocomplete list will not show if activated as part of commented line (line commented using an "'").
+- Fixed: When multiple projects open selecting an open file would add that file to whatever the current active project was resulting in the file being linked to several open projects. This was not the intended behaviour.
+
+Version 1.5.6 (November 26, 2017)
+- Changed: Updated to use WinFBX Library Version 1.0.
+
 Version 1.5.5 (September 27, 2017)
 - Changed: Updated deutsch.lang language file thanks to Joerg Buckel.
 - Changed: Instances of IFF&() changed to IFF() and SPACE$() to SPACE()to allow compiling with FBC 1.06.

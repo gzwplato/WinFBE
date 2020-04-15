@@ -1,5 +1,5 @@
-'    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+﻿'    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -149,58 +149,34 @@ end function
 ' Maps UTF-8 string to Ansi string.
 ' ========================================================================================
 FUNCTION Utf8ToAscii(byref strUtf8 AS STRING) AS STRING
-
-   dim i AS LONG                ' // Loop counter
-   dim strAscii AS STRING       ' // Ascii string
-   dim idx AS LONG              ' // Position in the string
-   dim c AS LONG                ' // ASCII code
-   dim b2 AS LONG               ' // Second byte
-   dim fSkipChar AS boolean     ' // Flag
-
-   IF LEN(strUtf8) = 0 THEN EXIT FUNCTION
-   
-   ' // The maximum length of the translated string will be
-   ' // the same as the length of the original string.
-   ' // We are pre-allocating the buffer for faster operation
-   ' // than concatenating each character one by one.
-   strAscii = SPACE(LEN(strUtf8))
-
-   ' // Intialize index position in the string buffer
-   ' // used to store the converted Ascii string
-   idx = 1
-   
-   ' // Examine the contents of each character in the UTF-8 encoded string
-   FOR i = 1 TO LEN(strUtf8)
-      ' // If fSkipChar is set we have to skip this character
-      IF fSkipChar THEN
-         fSkipChar = 0
-         continue FOR
-      END IF
-      ' // Get the Ascii code of the character
-      c = ASC(MID(strUtf8, i, 1))
-      ' // If it is betwen 0 and 127...
-      IF c < 128 THEN 
-         ' // ...we simply copy it to the string buffer...
-         MID(strAscii, idx, 1) = MID(strUtf8, idx, 1)
-         ' // ...and increase the position by 1.
-         idx = idx + 1
-      ELSEIF c < 224 THEN
-         ' // We need to join this byte and the next byte.
-         b2 = ASC(MID(strUtf8, i + 1, 1))
-         IF b2 > 127 THEN
-            c = (c - 192) * 64 + (b2 - 128)
-            MID(strAscii, idx, 1) = CHR(c)
-            ' // Set the flag to skip the next character
-            fSkipChar = TRUE
-            ' // Increase the position by 1.
-            idx = idx + 1
+   DIM sUnicode AS STRING 
+   DIM sAnsi AS STRING = ""
+   DIM dwLen AS DWORD = MultiByteToWideChar(CP_UTF8, 0, STRPTR(strUtf8),LEN(strUtf8), NULL, 0)
+   IF dwLen THEN
+      sUnicode = string(dwLen * 2, 0)
+      dwLen=MultiByteToWideChar(CP_UTF8, _                         'System default Windows UTF8 code page
+                           0, _                                    'Conversion type
+                           STRPTR(strUtf8), _                      'UTF8 string to convert
+                           LEN(strUtf8), _                         'Lenght of UTF8 string
+                           cast(WSTRING PTR, STRPTR(sUnicode)), _  'Unicode string
+                           dwLen*2)                                'Lenght of Unicode buffer
+      IF dwLen THEN
+         dwLen=WideCharToMultiByte(CP_ACP, 0,cast(WSTRING PTR, STRPTR(sUnicode)), _
+                                   -1, NULL, 0 , BYVAL 0, BYVAL 0)
+         IF dwLen THEN
+            sAnsi = string(dwLen, 0)
+            dwLen=WideCharToMultiByte(CP_ACP, _                          'Set to ANSI
+                                 0, _                                    'Conversion type
+                                 cast(WSTRING PTR, STRPTR(sUnicode)), _  'Unicode string to convert
+                                 LEN(sUnicode) / 2, _                    'Lenght of Unicode string
+                                 STRPTR(sAnsi), _                        'ANSI string
+                                 dwLen, _                                'Length of ANSI buffer
+                                 BYVAL 0, _                              'Invalid character replacement
+                                 BYVAL 0)                                'Replacement was used flag
          END IF
       END IF
-   NEXT
-
-   ' // Return the string
-   FUNCTION = LEFT(strAscii, idx - 1)
-
+   END IF
+   FUNCTION = rtrim(sAnsi, chr(0))
 END FUNCTION
 
 ' ========================================================================================
@@ -208,30 +184,38 @@ END FUNCTION
 ' ========================================================================================
 FUNCTION AnsiToUtf8(BYREF sAnsi AS STRING) AS STRING
  dim sUnicode AS STRING
- dim sUtf8    AS STRING
+ dim sUtf8    AS STRING = ""
 
  'Maps Ansi character string to a UTF-8 string.
 
  'Step one, convert to UNICODE
- sUnicode = string(LEN(sAnsi) * 2, 0)
- MultiByteToWideChar(CP_ACP, _                  'System default Windows ANSI code page
-                     MB_PRECOMPOSED, _          'Conversion type
-                     cast(LPCSTR, STRPTR(sAnsi)), _     'ANSI string to convert
-                     LEN(sAnsi), _              'Lenght of ANSI string
-                     cast(LPWSTR, STRPTR(sUnicode)), _  'Unicode string
-                     LEN(sUnicode))             'Lenght of Unicode buffer
+   DIM dwLen AS DWORD = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, STRPTR(sAnsi), LEN(sAnsi), NULL, 0)
+   IF dwLen THEN
+      sUnicode = string(dwLen*2, 0)
+      dwLen=MultiByteToWideChar(CP_ACP, _                     'System default Windows ANSI code page
+                           MB_PRECOMPOSED, _                  'Conversion type
+                           cast(LPCSTR, STRPTR(sAnsi)), _     'ANSI string to convert
+                           LEN(sAnsi), _                      'Lenght of ANSI string
+                           cast(LPWSTR, STRPTR(sUnicode)), _  'Unicode string
+                           dwLen*2)                           'Lenght of Unicode buffer
 
- 'Step two, convert to UTF-8
- sUtf8 = string(LEN(sAnsi), 0)
- WideCharToMultiByte(CP_UTF8, _                 'Set to UTF-8
-                     0, _                       'Conversion type
-                     cast(LPCWSTR, STRPTR(sUnicode)), _  'Unicode string to convert
-                     LEN(sUnicode) / 2, _       'Lenght of Unicode string
-                     cast(LPSTR, STRPTR(sUtf8)), _     'UTF-8 string
-                     LEN(sUtf8), _              'Length of UTF-8 buffer
-                     BYVAL 0, _                 'Invalid character replacement
-                     BYVAL 0)                   'Replacement was used flag
- FUNCTION = sUtf8
+      'Step two, convert to UTF-8
+      IF dwLen THEN
+         dwLen=WideCharToMultiByte(CP_UTF8, 0, cast(WSTRING PTR, STRPTR(sUnicode)), -1, NULL, 0, BYVAL 0, BYVAL 0)
+         IF dwLen THEN
+            sUtf8 = string(dwLen, 0)
+            dwLen=WideCharToMultiByte(CP_UTF8, _                     'Set to UTF-8
+                                 0, _                                'Conversion type
+                                 cast(LPCWSTR, STRPTR(sUnicode)), _  'Unicode string to convert
+                                 LEN(sUnicode) / 2, _                'Lenght of Unicode string
+                                 cast(LPSTR, STRPTR(sUtf8)), _       'UTF-8 string
+                                 dwLen, _                            'Length of UTF-8 buffer
+                                 BYVAL 0, _                          'Invalid character replacement
+                                 BYVAL 0)                            'Replacement was used flag
+         END IF
+      END IF
+   END IF
+   FUNCTION = rtrim(sUtf8, chr(0))
 
 END FUNCTION
 
@@ -240,12 +224,13 @@ END FUNCTION
 ' Maps UTF-8 string to Unicode character string 
 ' ========================================================================================
 FUNCTION Utf8ToUnicode(BYREF ansiStr AS CONST STRING) AS STRING
+   DIM sUnicode AS STRING = ""
    DIM dwLen AS DWORD = MultiByteToWideChar(CP_UTF8, 0, STRPTR(ansiStr), LEN(ansiStr), NULL, 0)
    IF dwLen THEN
-      DIM s AS STRING = SPACE(dwLen * 2)
-      dwLen = MultiByteToWideChar(CP_UTF8, 0, STRPTR(ansiStr), LEN(ansiStr), CAST(WSTRING PTR, STRPTR(s)), dwLen * 2)
-      IF dwLen THEN RETURN s
+      sUnicode = string(dwLen * 2, 0)
+      dwLen = MultiByteToWideChar(CP_UTF8, 0, STRPTR(ansiStr), LEN(ansiStr), CAST(WSTRING PTR, STRPTR(sUnicode)), dwLen * 2)
    END IF
+   FUNCTION = rtrim(sUnicode, chr(0))
 end function
 
    
@@ -253,22 +238,54 @@ end function
 ' Maps Unicode character string to a UTF-8 string.
 ' ========================================================================================
 FUNCTION UnicodeToUtf8(byval pswzUnicode as wstring ptr) AS STRING
- dim sUtf8 AS STRING
+ dim sUtf8 AS STRING = ""
 
  'Maps Unicode character string to a UTF-8 string.
- sUtf8 = string(LEN(*pswzUnicode) * 2, 0)
- WideCharToMultiByte(CP_UTF8, _                 'Set to UTF-8
-                     0, _                       'Conversion type
-                     cast(LPCWSTR, pswzUnicode), _  'Unicode string to convert
-                     LEN(*pswzUnicode), _       'Length of Unicode string
-                     cast(LPSTR, STRPTR(sUtf8)), _     'UTF-8 string
-                     LEN(sUtf8), _              'Length of UTF-8 buffer
-                     BYVAL 0, _                 'Invalid character replacement
-                     BYVAL 0)                   'Replacement was used flag
- FUNCTION = sUtf8
+   DIM dwLen AS DWORD = WideCharToMultiByte(CP_UTF8, 0,cast(WSTRING PTR, pswzUnicode), LEN(*pswzUnicode), NULL, 0 , BYVAL NULL, BYVAL NULL)
+   IF dwLen THEN
+       sUtf8 = string(dwLen * 2, 0)
+       WideCharToMultiByte(CP_UTF8, _                     'Set to UTF-8
+                           0, _                           'Conversion type
+                           cast(LPCWSTR, pswzUnicode), _  'Unicode string to convert
+                           LEN(*pswzUnicode), _           'Length of Unicode string
+                           cast(LPSTR, STRPTR(sUtf8)), _  'UTF-8 string
+                           dwLen*2, _                     'Length of UTF-8 buffer
+                           BYVAL 0, _                     'Invalid character replacement
+                           BYVAL 0)                       'Replacement was used flag
+   END IF
+   FUNCTION = rtrim(sUtf8, chr(0))
 
 END FUNCTION
 
+' ========================================================================================
+' Return if string is UTF8 encoded
+' ========================================================================================
+'function isutf8( byval _string as  zstring ptr ) as boolean
+'     if _string = 0 then return 0
+'    if left(*_string,2)= wchr(&hFF,&hFE) or left(*_string,2)=wchr(&hFE,&hFF) then print "utf16":exit function 'utf-16 boms
+'     if left(*_string,3)=wchr(&hEF,&hBB,&hBF) then return 1  'utf-8 bom
+'   dim bytes as const ubyte ptr = cptr(const ubyte ptr, _string)
+'   while *bytes
+'      if (((bytes[0] = &h09) orelse (bytes[0] = &h0A)) orelse (bytes[0] = &h0D)) orelse ((&h20 <= bytes[0]) andalso (bytes[0] <= &h7E)) then
+'         bytes += 1
+'         continue while
+'      end if
+'      if ((&hC2 <= bytes[0]) andalso (bytes[0] <= &hDF)) andalso ((&h80 <= bytes[1]) andalso (bytes[1] <= &hBF)) then
+'         bytes += 2
+'         continue while
+'      end if
+'      if ((((bytes[0] = &hE0) andalso ((&hA0 <= bytes[1]) andalso (bytes[1] <= &hBF))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF))) orelse ((((((&hE1 <= bytes[0]) andalso (bytes[0] <= &hEC)) orelse (bytes[0] = &hEE)) orelse (bytes[0] = &hEF)) andalso ((&h80 <= bytes[1]) andalso (bytes[1] <= &hBF))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF)))) orelse (((bytes[0] = &hED) andalso ((&h80 <= bytes[1]) andalso (bytes[1] <= &h9F))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF))) then
+'         bytes += 3
+'         continue while
+'      end if
+'      if (((((bytes[0] = &hF0) andalso ((&h90 <= bytes[1]) andalso (bytes[1] <= &hBF))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF))) andalso ((&h80 <= bytes[3]) andalso (bytes[3] <= &hBF))) orelse (((((&hF1 <= bytes[0]) andalso (bytes[0] <= &hF3)) andalso ((&h80 <= bytes[1]) andalso (bytes[1] <= &hBF))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF))) andalso ((&h80 <= bytes[3]) andalso (bytes[3] <= &hBF)))) orelse ((((bytes[0] = &hF4) andalso ((&h80 <= bytes[1]) andalso (bytes[1] <= &h8F))) andalso ((&h80 <= bytes[2]) andalso (bytes[2] <= &hBF))) andalso ((&h80 <= bytes[3]) andalso (bytes[3] <= &hBF))) then
+'         bytes += 4
+'         continue while
+'      end if
+'      return 0
+'   wend
+'   return 1
+'end function
 
 ' ========================================================================================
 ' Return text description of the specified file encoding
@@ -288,19 +305,24 @@ end function
 ' ========================================================================================
 ' Open a disk file and read it into a string (ANSI or UTF8)
 ' ========================================================================================
-function GetFileToString( byref wszFilename as const wstring, byref txtBuffer as string, byval pDoc as clsDocument ptr) as boolean
+function GetFileToString( byref wszFilename as const wstring, _
+                          byref txtBuffer as string, _
+                          byval pDoc as clsDocument ptr _
+                          ) as boolean
+   
+   if pDoc = 0 then return true
    
    ' Load the entire file into a string
-   dim as long f = freefile
-   If Open( wszFilename for Binary Access Read As #f ) = 0 Then 
-      If LOF(f) > 0 Then
-         txtBuffer = String(LOF(f), 0)
-         Get #f, , txtBuffer
-      End If
-   else
-      return true  ' error opening file
-   end if
-   close #f   
+   DIM dwCount AS DWORD, dwFileSize AS DWORD, dwHighSize AS DWORD, dwBytesRead AS DWORD
+   DIM hFile AS HANDLE = CreateFileW(@wszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, _
+                         OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL)
+   IF hFile = INVALID_HANDLE_VALUE THEN return true
+   dwFileSize = GetFileSize(hFile, @dwHighSize)
+   txtBuffer = String(dwFileSize, 0)
+   DIM bSuccess AS LONG = ReadFile(hFile, strptr(txtBuffer), dwFileSize, @dwBytesRead, NULL)
+   CloseHandle(hFile)
+   IF bSuccess = FALSE THEN return true
+
 
    ' Check for BOM signatures
    if left(txtBuffer, 3) = chr(&HEF, &HBB, &HBF) THEN
@@ -323,9 +345,19 @@ function GetFileToString( byref wszFilename as const wstring, byref txtBuffer as
          ' No conversion needed. clsDocument ApplyProperties will set
          ' the editor to UTF8 code.
       case FILE_ENCODING_UTF16_BOM
+         ' Convert the whole buffer to UTF-16 unicode string
+         dim as CWSTR wszText = string(len(txtBuffer),0)
+         MemCpy( CAST(any PTR, wszText.m_pBuffer), strptr(txtBuffer), len(txtBuffer))
+
+         ' Need to parse wszText to remove/process any possible visual designer code. Only
+         ' the non-VD text is returned. We also skip over any codegen code.
+         wszText = pDoc->ParseFormMetaData(HWND_FRMMAIN, wszText)
+
          ' Convert to UTF8 so it can display in the editor
          ' Need to pass a WSTRING pointer to the conversion function.
-         txtBuffer = UnicodeToUtf8( cast(WSTRING ptr, strptr(txtBuffer)) )
+         'txtBuffer = UnicodeToUtf8( wszText )
+         txtBuffer = wszText.utf8
+
    END select
       
    function = false
@@ -341,13 +373,14 @@ function ConvertTextBuffer( byval pDoc as clsDocument ptr, _
                             
    if pDoc = 0 then exit function
 
+   dim as hwnd hEdit = pDoc->hWndActiveScintilla
    ' Save the current file position and first visible line
-   dim nFirstLine as long = SciExec( pDoc->hWindow, SCI_GETFIRSTVISIBLELINE, 0, 0) 
-   Dim nPos As Long = SciExec(pDoc->hWindow, SCI_GETCURRENTPOS, 0, 0)
+   dim nFirstLine as long = SciExec( hEdit, SCI_GETFIRSTVISIBLELINE, 0, 0) 
+   Dim nPos As Long = SciExec(hEdit, SCI_GETCURRENTPOS, 0, 0)
 
    pDoc->FileEncoding = FileEncoding
-   Dim As ZString Ptr psz = Cast( ZString Ptr, SciExec(pDoc->hWindow, SCI_GETCHARACTERPOINTER, 0, 0) )
-   dim as long sciCodePage = SciExec(pDoc->hWindow, SCI_GETCODEPAGE, 0, 0)   ' 0 or SC_CP_UTF8 
+   Dim As ZString Ptr psz = Cast( ZString Ptr, SciExec(hEdit, SCI_GETCHARACTERPOINTER, 0, 0) )
+   dim as long sciCodePage = SciExec(hEdit, SCI_GETCODEPAGE, 0, 0)   ' 0 or SC_CP_UTF8 
    dim as string txtBuffer 
    
    ' Convert buffer to specified file encoding
@@ -358,7 +391,7 @@ function ConvertTextBuffer( byval pDoc as clsDocument ptr, _
          else   
             ' need to convert from UTF8 to ANSI
             txtBuffer = Utf8ToAscii(*psz)
-            SciExec(pDoc->hWindow, SCI_SETCODEPAGE, 0, 0 )
+            SciExec(hEdit, SCI_SETCODEPAGE, 0, 0 )
          end if    
 
       case FILE_ENCODING_UTF8_BOM, FILE_ENCODING_UTF16_BOM
@@ -367,7 +400,7 @@ function ConvertTextBuffer( byval pDoc as clsDocument ptr, _
          else
             ' need to convert from ANSI to UTF8
             txtBuffer = AnsiToUtf8(*psz)
-            SciExec(pDoc->hWindow, SCI_SETCODEPAGE, SC_CP_UTF8, 0 )
+            SciExec(hEdit, SCI_SETCODEPAGE, SC_CP_UTF8, 0 )
          end if    
 
    END SELECT
@@ -375,8 +408,8 @@ function ConvertTextBuffer( byval pDoc as clsDocument ptr, _
    ' Set the new buffer
    pDoc->SetText(txtBuffer)
     
-   SciExec( pDoc->hWindow, SCI_SETFIRSTVISIBLELINE, nFirstLine, 0) 
-   SciExec(pDoc->hWindow, SCI_GOTOPOS, nPos, 0)
+   SciExec(hEdit, SCI_SETFIRSTVISIBLELINE, nFirstLine, 0) 
+   SciExec(hEdit, SCI_GOTOPOS, nPos, 0)
    
    function = 0
 end function   
@@ -386,8 +419,8 @@ end function
 ' Generic open document handler for when Function ListBox item selected or Explorer Treeview
 ' ========================================================================================
 function OpenSelectedDocument( byval pDoc as clsDocument ptr, _
-                               byref wszFunctionName as WSTRING _
-                               ) as long
+                               byref wszName as WSTRING, _
+                               ByVal hCurrentNode As HTREEITEM =0) as long
 
    ' Open the document based on the filename. If the Header line is clicked
    ' then simply open the document and point to the first line. If a function 
@@ -395,37 +428,77 @@ function OpenSelectedDocument( byval pDoc as clsDocument ptr, _
    ' and line number position within the file.
    dim wszText as wstring * MAX_PATH
    dim nLineNumber as LONG
+   dim as long idx = gApp.GetActiveProjectIndex()
    if pDoc THEN  ' Header node
       wszText = pDoc->DiskFilename
       nLineNumber = 0
+      idx=pDoc->ProjectIndex
    else 
-      dim pData as DBENGINE_DATA ptr
-      pData = gdb.dbFindFunctionName( str(wszFunctionName) ) 
+      dim pData as DB2_DATA ptr
+      if hCurrentNode then
+         Dim As Hwnd hTree = GetDlgItem(HWND_FRMEXPLORER, IDC_FRMEXPLORER_TREE)
+         if CheckIsDoc4ExplorerTreeview(hTree,hCurrentNode)=false then
+            Dim As LPARAM lParam = FF_TreeView_GetlParam(hTree,hCurrentNode)
+            pData = cast(DB2_DATA ptr , lParam)
+            if pData=0 then
+               idx=GetProjectIndex4ExplorerTreeview(hTree,hCurrentNode)
+               if idx<0 then idx = gApp.GetActiveProjectIndex()
+               gdb2.dbRewind4Proj(idx)
+               pData=gdb2.dbFindTYPE(wszName,ELF_CurrentProject,1)
+            end if
+         end if
+      else
+         gdb2.dbRewind4Proj(idx) 
+         pData = gdb2.dbFindFunction( wszName,ELF_CurrentProject,1 )
+         if pData = 0 then pData = gdb2.dbFindSub( wszName,ELF_CurrentProject,1 )
+      end if 
       if pData then
-         wszText = pData->DiskFilename
-         nLineNumber = pData->nLineNum
+         IF pData->deleted=FALSE THEN
+            if pData->pFileDATA then
+               wszText = pData->pFileDATA->fileName
+            endif
+            nLineNumber = pData->nStartLineNum
+         ENDIF
       end if
    end if   
-   
-   if AfxFileExists(wszText) = 0 THEN exit function
-      
-   ' Display the document containing the selected sub/function       
-   pDoc = frmMain_OpenFileSafely(HWND_FRMMAIN, _
-                           False, _    ' bIsNewFile
-                           False, _    ' bIsTemplate
-                           true, _     ' bShowInTab
-                           false, _    ' bIsInclude
-                           wszText, _  ' pwszName
-                           0 )  ' pDocIn
+
+   ' Not all documents exist on disk file. For example, a QuickRun file will exist in
+   ' the editor but may never have a disk footprint. We need to search the project to
+   ' determine if the filename has a pDoc already associated with it. If it does, then
+   ' pass that pDoc rather than looking for a disk filename.
+   pDoc = gApp.Projects(idx).GetDocumentPtrByFilename(wszText)
+   gdb2.dbRewind4File(idx,wszText)
+   if pDoc then
+      pDoc = frmMain_OpenFileSafely(HWND_FRMMAIN, _
+                              False, _    ' bIsNewFile
+                              False, _    ' bIsTemplate
+                              true, _     ' bShowInTab
+                              false, _    ' bIsInclude
+                              "", _       ' pwszName
+                              pDoc )      ' pDocIn
+   else   
+      if AfxFileExists(wszText) = 0 THEN exit function
+      ' Display the document containing the selected sub/function       
+      pDoc = frmMain_OpenFileSafely(HWND_FRMMAIN, _
+                              False, _    ' bIsNewFile
+                              False, _    ' bIsTemplate
+                              true, _     ' bShowInTab
+                              false, _    ' bIsInclude
+                              wszText, _  ' pwszName
+                              0 )         ' pDocIn
+   end if
+
    ' Set the top line to display in the editor. I chose to start 3 lines before the
    ' function just to make it visually more appealing.
    if pDoc THEN
-      SciExec( pDoc->hWindow, SCI_SETFIRSTVISIBLELINE, nLineNumber - 3, 0) 
-      SciExec( pDoc->hWindow, SCI_GOTOLINE, nLineNumber, 0) 
+      dim as hwnd hEdit = pDoc->hWndActiveScintilla
+      SciExec( hEdit, SCI_SETFIRSTVISIBLELINE, nLineNumber - 3, 0) 
+      SciExec( hEdit, SCI_GOTOLINE, nLineNumber, 0) 
    END IF
    
    function = 0
 end function
+
 
 ' ========================================================================================
 ' Process prefix {CURDRIVE} and convert to current drive letter.
@@ -443,15 +516,14 @@ Function ProcessToCurdrive( ByRef wzFilename As CWSTR ) As CWSTR
    else
       zText = AfxGetExePathName
    end if      
-   Dim wzCurDrive As CWSTR = LCase(Left(**zText, 3))  ' eg. D:\
+   Dim wzCurDrive As CWSTR = LCase(Left(zText, 3))  ' eg. D:\
 
-   If LCase(Left(**wzFilename, 3)) = wzCurDrive Then 
+   If LCase(Left(wzFilename, 3)) = wzCurDrive Then 
       wzFilename = WSTR("{CURDRIVE}") & Mid(**wzFilename, 2)
    End If
 
    Return wzFilename
 End Function
-
 
 ' ========================================================================================
 ' Process current drive to prefix {CURDRIVE} 
@@ -469,13 +541,12 @@ Function ProcessFromCurdrive( ByRef wzFilename As CWSTR ) As CWSTR
    else
       zText = AfxGetExePathName
    end if      
-   If Ucase(Left(**wzFilename, 10)) = WSTR("{CURDRIVE}") Then 
-      wzFilename = Left(**zText, 1) & Mid(wzFilename, 11)
+   If Ucase(Left(wzFilename, 10)) = WSTR("{CURDRIVE}") Then 
+      wzFilename = Left(zText, 1) & Mid(wzFilename, 11)
    End If
 
    Return wzFilename
 End Function
-
 
 
 ' ========================================================================================
@@ -532,6 +603,24 @@ Function FF_TreeView_GetlParam( ByVal hWndControl As HWnd, _
     TreeView_GetItem(hWndControl, Varptr(ti))
 
     Function = ti.lParam
+End Function
+
+' ========================================================================================
+' Retrieve the iImage value from a Treeview
+' ========================================================================================
+Function FF_TreeView_GetiImage( ByVal hWndControl As HWnd, _
+                                ByVal hItem As HANDLE _
+                                ) As Long
+
+    Dim ti As TV_ITEM
+
+    with ti
+       .hItem = hItem                                                 
+       .mask  = TVIF_IMAGE  
+       TreeView_GetItem(hWndControl, Varptr(ti))
+
+       Function = .iImage 
+    end with
 End Function
 
 ' ========================================================================================
@@ -647,7 +736,7 @@ Function AfxIFileOpenDialogW( ByVal hwndOwner As HWnd, ByVal idButton As Long) A
 
       Case IDC_FRMOPTIONSCOMPILER_CMDFBWIN32, IDC_FRMOPTIONSCOMPILER_CMDFBWIN64
          rgFileTypes(1).pszName = @L(100,"FB Compiler")
-         rgFileTypes(1).pszSpec = @WSTR("fbc.exe")
+         rgFileTypes(1).pszSpec = @WSTR("fbc*.exe")
          rgFileTypes(2).pszName = @L(230,"Executable")
          rgFileTypes(2).pszSpec = @WSTR("*.exe")
          rgFileTypes(3).pszName = @L(79,"All files")
@@ -972,33 +1061,33 @@ End Function
 ' ========================================================================================
 ' Load a .lang localization file from disk and populate the localization array
 ' ========================================================================================
-Function LoadLocalizationFile( ByVal pwszName As WString Ptr ) As BOOLEAN
+Function LoadLocalizationFile( Byref wszFileName As CWSTR ) As BOOLEAN
 
    ' default that the file failed to load
    Function = False
-   If pwszName = 0 Then Exit Function
-   If AfxFileExists(*pwszName) = 0 Then Exit Function
+   If AfxFileExists(wszFileName) = 0 Then Exit Function
 
-   Dim st    As WString * MAX_PATH
-   Dim wKey  As WString * MAX_PATH
-   Dim wData As WString * MAX_PATH
+   Dim as CBSTR wst, wKey, wData
    Dim nKey  As Long
    Dim nData As Long  
    Dim i     As Long
     
-   Dim f As Long = Freefile
-   If Open( *pwszName For Input Encoding "utf16" As #f ) <> 0 Then Exit Function
-
-   Do Until Eof(f)
-      Line Input #f, st
-      If Len(st) = 0 Then Continue Do
-      If Left(st, 1) = "'" Then Continue Do
+   dim pStream AS CTextStream
+   if pStream.OpenUnicode(wszFileName) <> S_OK then exit function
+   
+   do until pStream.EOS
+      wst = pStream.ReadLine
       
-      i = Instr(st, ":")
+      If Len(wst) = 0 Then Continue Do
+      If Left(wst, 1) = "'" Then Continue Do
+      
+      i = Instr(wst, ":")
       If i = 0 Then Continue Do
       
-      wKey  = Left(st, i-1)
-      wData = Mid(st, i+1)
+      wKey = "": wData = "": nData = 0
+
+      wKey  = Left(wst, i-1)
+      wData = Mid(**wst, i+1)    ' MID causes problems with Chinese data so ** is used.
       
       nKey  = Val(wKey)
       nData = Val(wData)
@@ -1019,45 +1108,9 @@ Function LoadLocalizationFile( ByVal pwszName As WString Ptr ) As BOOLEAN
       End If   
          
    Loop
-   Close #f
-
-   Function = True
-End Function
-
-
-''
-''
-Function CreateDeclaresFile( ByRef sFilename As Const String ) As LONG
-
-   dim pDoc as clsDocument ptr
-   dim pData as DBENGINE_DATA ptr
+   pStream.Close
    
-   dim as long idx = gApp.GetActiveProjectIndex()
-
-   dim as long f = Freefile
-   Open sFilename For Output As #f
-
-   gdb.dbRewind()
-   do 
-      pData = gdb.dbGetNext()
-      if pData = 0 THEN exit do
-      if pData->dataType <> DB_FUNCTION_NAME THEN continue do
-
-      ' data1 = Function name.
-      ' data2 = Function declare parameter list.
-
-      ' Bypass any declares for Class subs/functions
-      if instr(pData->data1, ".") = 0 THEN
-         if gApp.Projects(idx).GetDocumentPtrByFilename(wstr(pData->DiskFilename)) THEN 
-            Print #f, "Declare " & AfxStrShrink(pData->data2, Chr(32,9,13,10))
-         end if
-      END IF
-
-   loop
-
-   Close #f
-
-   Function = 0
+   Function = True
 End Function
 
 
@@ -1172,24 +1225,14 @@ function GetRunExecutableFilename() as CWSTR
    dim y as long = Instr(wszOptions, wstr(" -X "))
    if y THEN
       y = y + 4  ' skip over the switch itself
-      for i as long = y to len(wszOptions)
-         ' iterate to the beginning of the next switch or end of the string
-         ' skip over spaces that are part of a filename string
-         if wszOptions[i-1] = 34 THEN bInString = not bInString  ' double quotes
-         if bInString THEN continue for
-         if wszOptions[i-1] = 45 then  ' dash   
-            wszFilename = mid(wszOptions, y, i-y-1)
-            exit for
-         end if   
-      NEXT
-      ' There was no other switch so we made it to the end of the string
-      if len(wszFilename) = 0 then wszFilename = mid(wszOptions, y)
+      wszFilename= AfxStrMid(wszOptions,"""","""",y)
    END IF
-   
    ' Has a filename been determined yet? If it has then it possibly does not have
    ' a path assigned to it so we should add one.
-   if len(wszFilename) THEN
-      if len(AfxStrPathname("PATH", wszFilename)) = 0 THEN
+   if len(wszFilename) THEN      
+      if gApp.IsProjectActive THEN   
+         gApp.Projects(idx).Format2FullPath(wszFilename)
+      ELSEif len(AfxStrPathname("PATH", wszFilename)) = 0 THEN
          wszFilename = AfxStrPathname("PATH", pDocMain->DiskFilename) + wszFilename
       END IF
    else
@@ -1205,4 +1248,130 @@ END FUNCTION
 
 
 
+' ========================================================================================
+' Loads an image from a resource, converts it to an icon or bitmap and returns a pointer
+' to the raw PNG pixels. This is needed by the scintilla autocomplete popup.
+' Memory is ALLOCATE so it needs to be DEALLOCATE.
+' Parameters:
+' - hInstance     = [in] A handle to the module whose portable executable file or an accompanying
+'                   MUI file contains the resource. If this parameter is NULL, the function searches
+'                   the module used to create the current process.
+' - wszImageName  = [in] Name of the image in the resource file (.RES). If the image resource uses
+'                   an integral identifier, wszImage should begin with a number symbol (#)
+'                   followed by the identifier in an ASCII format, e.g., "#998". Otherwise,
+'                   use the text identifier name for the image. Only images embedded as raw data
+'                   (type RCDATA) are valid. These must be icons in format .png, .jpg, .gif, .tiff.
+' ========================================================================================
+TYPE MYBITMAPINFO
+    bmiHeader AS BITMAPINFOHEADER
+    bmiColors(256) AS RGBQUAD 
+END TYPE
+             
+''
+''
+FUNCTION LoadPNGfromRes(BYVAL hInstance AS HINSTANCE, BYREF wszImageName AS WSTRING) as any ptr
+   dim as HBITMAP hBitmap = AfxGdipImageFromRes(hInstance, wszImageName, 0, false, IMAGE_BITMAP) 
+        
+   dim bi AS MYBITMAPINFO
+   dim bm AS BITMAP
+   dim dwp AS DWORD PTR
+   dim as HDC hIC, hDC 
+   dim as any ptr pPixel
+   
+   IF hBitmap THEN
+      hIC = GetWindowDC(0)
+      hDC = CreateCompatibleDC(hIC)
+      SelectObject(hDC, hBitmap)
 
+      GetObject(hBitmap, SIZEOF(bm), @bm)
+      bi.bmiHeader.biSize        = SIZEOF(bi.bmiHeader)
+      bi.bmiHeader.biWidth       = bm.bmWidth
+      bi.bmiHeader.biHeight      = -bm.bmHeight ' Put top in TOP instead on bottom!
+      bi.bmiHeader.biPlanes      = 1
+      bi.bmiHeader.biBitCount    = 32
+      bi.bmiHeader.biCompression = BI_RGB
+                      
+      pPixel = ALLOCATE((bm.bmWidth * bm.bmHeight) * sizeof(DWORD))
+      dwp = cast(dword ptr, pPixel)
+      GetDIBits( hDC, hBitmap, 0, bm.bmHeight, _
+                        BYVAL dwp, cast(LPBITMAPINFO, @bi), DIB_RGB_COLORS)
+     
+      DeleteDC(hIC)
+      DeleteDC(hDC)
+   end if
+
+   ' // Return the handle to the PNG raw pixels
+   DeleteObject(hBitmap)
+   return pPixel
+END FUNCTION
+' ========================================================================================
+
+Function WStrIsEqual(Byref lpWord As wString,Byref lpList As wString,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+   Function = false
+   If fMatchCase Then
+      If strcmpW(lpWord,lpList)=0 Then 
+         Function = TRUE
+      end if
+   ElseIf strcmpiW(lpWord,lpList)=0 Then 
+      Function = TRUE
+   EndIf
+End Function
+
+Function WStrNIsEqual(Byref lpWord As wString,Byref lpList As wString,Byref Size As long,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+   Function = false
+   If fMatchCase Then
+      If wcsncmp(@lpWord,@lpList,Size)=0 Then 
+         Function = TRUE
+      end if
+   ElseIf _wcsnicmp(@lpWord,@lpList,Size)=0 Then 
+      Function = TRUE
+   EndIf
+End Function
+
+Function StrIsEqual(Byref lpWord As String,Byref lpList As String,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+   Function = false
+   If fMatchCase Then
+      If strcmp(lpWord,lpList)=0 Then 
+         Function = TRUE
+      end if
+   ElseIf strcmpi(lpWord,lpList)=0 Then 
+      Function = TRUE
+   EndIf
+End Function
+
+Function StrNIsEqual(Byref lpWord As String,Byref lpList As String,Byref Size As long,ByVal fMatchCase As BOOLEAN=FALSE) As BOOLEAN
+   Function = false
+   If fMatchCase Then
+      If strncmp(lpWord,lpList,Size)=0 Then 
+         Function = TRUE
+      end if
+   ElseIf strncmpi(lpWord,lpList,Size)=0 Then 
+      Function = TRUE
+   EndIf
+End Function   
+   
+FUNCTION AfxStrRemoveWithMark (BYREF wszMainStr AS CONST WSTRING, BYREF wszDelim1 AS CONST WSTRING, BYREF wszDelim2 AS CONST WSTRING, BYREF MarkKeys AS CONST WSTRING, BYVAL fRemoveAll AS BOOLEAN = FALSE, BYVAL IsInstrRev AS BOOLEAN = FALSE) AS CWSTR
+   DIM nPos1 AS LONG =iif(IsInstrRev=true, INSTRRev(wszMainStr, wszDelim1), INSTR(wszMainStr, wszDelim1))
+   IF nPos1 = 0 THEN RETURN wszMainStr
+   DIM nPos2 AS LONG = INSTR(nPos1 + LEN(wszDelim1), wszMainStr, wszDelim2)
+   IF nPos2 = 0 THEN RETURN wszMainStr
+   nPos2 += LEN(wszDelim2)
+   DIM nLen AS LONG = nPos2 - nPos1
+   IF fRemoveAll = FALSE THEN 
+      RETURN MID(wszMainStr, 1, nPos1 - 1)& MarkKeys & MID(wszMainStr, nPos2)
+   else
+      RETURN AfxStrRemoveWithMark(MID(wszMainStr, 1, nPos1 - 1) & MarkKeys & MID(wszMainStr, nPos2), wszDelim1, wszDelim2,MarkKeys, fRemoveAll,IsInstrRev)  
+   end if
+END FUNCTION
+   
+FUNCTION AfxStrMid (BYREF wszMainStr AS CONST WSTRING, BYREF wszDelim1 AS CONST WSTRING, BYREF wszDelim2 AS CONST WSTRING, BYVAL Index AS long = 1) AS CWSTR
+   DIM nPos1 AS LONG = INSTR(Index,wszMainStr, wszDelim1)
+   IF nPos1   THEN
+      nPos1 += LEN(wszDelim1)
+      DIM nPos2 AS LONG = INSTR(nPos1, wszMainStr, wszDelim2)
+      IF nPos2 THEN 
+         RETURN MID(wszMainStr,nPos1, nPos2-nPos1)
+      end if
+   end if 
+   RETURN ""
+END FUNCTION

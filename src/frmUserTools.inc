@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -103,9 +103,15 @@ Function ExecuteUserTool( ByVal nToolNum As Long ) As Long
    ' Is the specified working folder valid? If it is not, then maybe try same path 
    ' but use the current drive.
    wszWorkingFolder = gConfig.Tools(nToolNum).wszWorkingFolder
+
+
    If Len(wszWorkingFolder) Then
+      ' Convert relative path to absolute path if needed.
+      if AfxPathIsRelative(wszWorkingFolder) then
+         wszWorkingFolder = AfxPathCombine(AfxGetExePathName, wszWorkingFolder)
+      END IF
       if AfxPathIsDirectory(wszWorkingFolder) = false then
-         wszWorkingFolder = left(**AfxGetExePathName, 1) + mid(wszWorkingFolder, 2)
+         wszWorkingFolder = left(AfxGetExePathName, 1) + mid(**wszWorkingFolder, 2)
       end if
       ChDir gConfig.Tools(nToolNum).wszWorkingFolder
    End If
@@ -113,8 +119,12 @@ Function ExecuteUserTool( ByVal nToolNum As Long ) As Long
    ' Is the specified exe command to execute valid? If it is not, then maybe try same path 
    ' but use the current drive.
    wszCommand = gConfig.Tools(nToolNum).wszCommand 
+   ' Convert relative path to absolute path if needed.
+   if AfxPathIsRelative(wszCommand) then
+      wszCommand = AfxPathCombine(AfxGetExePathName, wszCommand)
+   END IF
    if AfxPathFileExists(wszCommand) = false THEN
-      wszCommand = left(**AfxGetExePathName, 1) + mid(wszCommand, 2)
+      wszCommand = left(AfxGetExePathName, 1) + mid(**wszCommand, 2)
    END IF
    wszCommand = chr(34) + wszCommand + chr(34)
    
@@ -193,6 +203,7 @@ Function CreateUserTools_AcceleratorTable() As Long
          wszShortcut = wszShortcut + "Alt+"
       end if   
           
+      nKey = 0   ' important to reset
       Select Case UCase(Trim(gConfig.Tools(y).wszKey))
          Case "F1":  nKey = VK_F1
          Case "F2":  nKey = VK_F2
@@ -539,7 +550,7 @@ Function frmUserTools_OnCommand(ByVal HWnd As HWnd, ByVal id As Long, ByVal hwnd
             NEXT
             erase gConfig.ToolsTemp
             CreateUserTools_AcceleratorTable            
-            gConfig.SaveToFile
+            gConfig.SaveConfigFile
             SendMessage( HWnd, WM_CLOSE, 0, 0 )
             Exit Function
          end if
@@ -604,6 +615,9 @@ Function frmUserTools_Show( ByVal hWndParent As HWnd, _
                             ByVal nCmdShow   As Long = 0 _
                             ) As Long
 
+   DIM hBitmap AS HBITMAP
+   dim hCtrl as HWnd
+   
    '  Create the main window and child controls
    Dim pWindow as CWindow Ptr = New CWindow
    pWindow->DPI = AfxCWindowOwnerPtr(hwndParent)->DPI
@@ -625,12 +639,23 @@ Function frmUserTools_Show( ByVal hWndParent As HWnd, _
    pWindow->AddControl("BUTTON", , IDC_FRMUSERTOOLS_CMDDELETE, L(282, "Delete"), 87, 388, 74, 28, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("ICONBUTTON", , IDC_FRMUSERTOOLS_CMDUP, WSTR("#1001"), 166, 388, 28, 28, _
+   
+   hCtrl = _
+   pWindow->AddControl("ICONBUTTON", , IDC_FRMUSERTOOLS_CMDUP, "", 166, 388, 28, 28, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or WS_CLIPSIBLINGS Or WS_CLIPCHILDREN Or BS_BITMAP Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER Or LR_DEFAULTCOLOR Or LR_LOADMAP3DCOLORS Or LR_LOADTRANSPARENT Or LR_SHARED, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("ICONBUTTON", , IDC_FRMUSERTOOLS_CMDDOWN, WSTR("#1000"), 199, 388, 28, 28, _
+   hBitmap = AfxGdipImageFromRes(pWindow->InstanceHandle, WSTR("IMAGE_UP"), 0, false, IMAGE_BITMAP, 0)
+   SendMessage(hCtrl, BM_SETIMAGE, IMAGE_BITMAP, cast(LPARAM, hBitmap))
+   IF hBitmap THEN DeleteObject(hBitmap)
+
+   hCtrl = _
+   pWindow->AddControl("ICONBUTTON", , IDC_FRMUSERTOOLS_CMDDOWN, "", 199, 388, 28, 28, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or WS_CLIPSIBLINGS Or WS_CLIPCHILDREN Or BS_BITMAP Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER Or LR_DEFAULTCOLOR Or LR_LOADMAP3DCOLORS Or LR_LOADTRANSPARENT Or LR_SHARED, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
+   hBitmap = AfxGdipImageFromRes(pWindow->InstanceHandle, WSTR("IMAGE_DOWN"), 0, false, IMAGE_BITMAP, 0)
+   SendMessage(hCtrl, BM_SETIMAGE, IMAGE_BITMAP, cast(LPARAM, hBitmap))
+   IF hBitmap THEN DeleteObject(hBitmap)
+
    pWindow->AddControl("LABEL", , IDC_FRMUSERTOOLS_LABEL1, L(290,"Tool Name:"), 230, 25, 95, 18, _
         WS_CHILD Or WS_VISIBLE Or WS_CLIPSIBLINGS Or WS_CLIPCHILDREN Or SS_RIGHT Or SS_NOTIFY, _
         WS_EX_LEFT Or WS_EX_LTRREADING)

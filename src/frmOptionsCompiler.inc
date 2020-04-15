@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@ Function frmOptionsCompiler_OnCommand(ByVal HWnd As HWnd, ByVal id As Long, ByVa
    Select Case id
 
       Case IDC_FRMOPTIONSCOMPILER_CMDFBWIN32, IDC_FRMOPTIONSCOMPILER_CMDFBWIN64, _
-           IDC_FRMOPTIONSCOMPILER_CMDFBHELPFILE, IDC_FRMOPTIONSCOMPILER_CMDAPIHELPPATH
+           IDC_FRMOPTIONSCOMPILER_CMDFBHELPFILE, IDC_FRMOPTIONSCOMPILER_CMDAPIHELPPATH, _
+           IDC_FRMOPTIONSCOMPILER_CMDWINFBXHELPPATH
 
          If codeNotify = BN_CLICKED Then
             ' Display the Open File Dialog
@@ -30,18 +31,12 @@ Function frmOptionsCompiler_OnCommand(ByVal HWnd As HWnd, ByVal id As Long, ByVa
                If id = IDC_FRMOPTIONSCOMPILER_CMDFBWIN64 Then SetWindowTextW( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN64), pwszName )
                If id = IDC_FRMOPTIONSCOMPILER_CMDFBHELPFILE Then SetWindowTextW( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE), pwszName )
                If id = IDC_FRMOPTIONSCOMPILER_CMDAPIHELPPATH Then SetWindowTextW( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH), pwszName )
+               If id = IDC_FRMOPTIONSCOMPILER_CMDWINFBXHELPPATH Then SetWindowTextW( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTWINFBXHELPPATH), pwszName )
                CoTaskMemFree pwszName
             End If
             Exit Function
          End If
 
-      Case IDC_FRMOPTIONSCOMPILER_CMDAFXPATH
-         If codeNotify = BN_CLICKED Then
-            dim as CWSTR cwsFolder = AfxBrowseForFolder(HWND, L(349,"WinFBX Library Path:"), curdir)
-            if len(cwsFolder) THEN
-               AfxSetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTAFXPATH), cwsFolder)
-            END IF
-         end if
    End Select
 
    Function = 0
@@ -102,63 +97,62 @@ Function frmOptionsCompiler_Show( ByVal hWndParent As HWnd, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
 
-   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLAFXPATH, L(349,"WinFBX Library Path:"), 0, 98, 375, 15, _
+   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLSWITCHES, L(153,"Additional compiler option switches (optional):"), 0, 98, 375, 14, _
         WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTAFXPATH, "", 0, 116, 356, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
-        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
-   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDAFXPATH, "...", 362, 116, 24, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-
-'112 + 34 = 146
-   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLSWITCHES, L(153,"Additional compiler option switches (optional):"), 0, 160, 375, 14, _
-        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTFBSWITCHES, "", 0, 178, 356, 20, _
+   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTFBSWITCHES, "", 0, 115, 356, 20, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
         WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
    
-   
-   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLFBHELP, L(155,"FreeBASIC Help file (*.chm):"), 0, 164+48, 375, 14, _
-        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE, "", 0, 182+48, 356, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
-        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
-   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDFBHELPFILE, "...", 362, 182+48, 24, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-   
-   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLAPIHELP, L(157,"WinAPI Help file (Win32_fb.chm):"), 0, 219+48, 375, 16, _
-        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH, "", 0, 239+48, 356, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
-        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
-   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDAPIHELPPATH, "...", 362, 239+48, 24, 20, _
-        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
-        WS_EX_LEFT Or WS_EX_LTRREADING)
-
    pWindow->AddControl("CHECKBOX", , IDC_FRMOPTIONSCOMPILER_CHKRUNVIACOMMANDWINDOW, _
-        L(273,"Run compiled programs using command window"), 0, 274+48, 400, 20, _
+        L(273,"Run compiled programs using command window"), 0, 145, 400, 20, _
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_NOTIFY Or BS_AUTOCHECKBOX Or BS_LEFT Or BS_VCENTER, _
         WS_EX_LEFT Or WS_EX_LTRREADING)
+
+   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLFBHELP, L(155,"FreeBASIC Help file (*.chm):"), 0, 202, 375, 14, _
+        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE, "", 0, 220, 356, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
+        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
+   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDFBHELPFILE, "...", 362, 220, 24, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+   
+   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLAPIHELP, L(157,"WinAPI Help file (Win32_fb.chm):"), 0, 250, 375, 16, _
+        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH, "", 0, 270, 356, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
+        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
+   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDAPIHELPPATH, "...", 362, 270, 24, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+
+   pWindow->AddControl("LABEL", , IDC_FRMOPTIONSCOMPILER_LBLWINFBXHELP, "WinFBX Help file (WinFBX.chm):", 0, 300, 375, 16, _
+        WS_CHILD Or WS_VISIBLE Or SS_LEFT Or SS_NOTIFY, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+   pWindow->AddControl("TEXTBOX", , IDC_FRMOPTIONSCOMPILER_TXTWINFBXHELPPATH, "", 0, 320, 356, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or ES_LEFT Or ES_AUTOHSCROLL, _
+        WS_EX_CLIENTEDGE Or WS_EX_LEFT Or WS_EX_LTRREADING Or WS_EX_RIGHTSCROLLBAR)
+   pWindow->AddControl("BUTTON", , IDC_FRMOPTIONSCOMPILER_CMDWINFBXHELPPATH, "...", 362, 320, 24, 20, _
+        WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or BS_TEXT Or BS_PUSHBUTTON Or BS_NOTIFY Or BS_CENTER Or BS_VCENTER, _
+        WS_EX_LEFT Or WS_EX_LTRREADING)
+
    
    gConfig.FBWINCompiler32  = ProcessFromCurdrive(gConfig.FBWINCompiler32)
    gConfig.FBWINCompiler64  = ProcessFromCurdrive(gConfig.FBWINCompiler64)
-   gConfig.AfxPath          = ProcessFromCurdrive(gConfig.AfxPath)
    gConfig.CompilerHelpfile = ProcessFromCurdrive(gConfig.CompilerHelpfile)
    gConfig.Win32APIHelpfile = ProcessFromCurdrive(gConfig.Win32APIHelpfile)
+   gConfig.WinFBXHelpfile   = ProcessFromCurdrive(gConfig.WinFBXHelpfile)
 
    Dim As HWnd HWnd = HWND_FRMOPTIONSCOMPILER
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN32),       gConfig.FBWINCompiler32
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN64),       gConfig.FBWINCompiler64
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTAFXPATH),       gConfig.AfxPath
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBSWITCHES),    gConfig.CompilerSwitches
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE),    gConfig.CompilerHelpfile
-   SetWindowTextW GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH), gConfig.Win32APIHelpfile
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN32),        gConfig.FBWINCompiler32)
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN64),        gConfig.FBWINCompiler64)
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBSWITCHES),     gConfig.CompilerSwitches)
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE),     gConfig.CompilerHelpfile)
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH),  gConfig.Win32APIHelpfile)
+   AfxSetWindowText( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_TXTWINFBXHELPPATH), gConfig.WinFBXHelpfile)
    Button_SetCheck( GetDlgItem( HWnd, IDC_FRMOPTIONSCOMPILER_CHKRUNVIACOMMANDWINDOW),  gConfig.RunViaCommandWindow)
 
    Function = 0 

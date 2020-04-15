@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -285,7 +285,7 @@ Function frmRecent_Show( ByVal hWndParent As HWnd ) As LRESULT
         WS_CHILD Or WS_VISIBLE Or WS_TABSTOP Or _
         TVS_SHOWSELALWAYS Or TVS_FULLROWSELECT Or TVS_TRACKSELECT, _   
         WS_EX_LEFT Or WS_EX_RIGHTSCROLLBAR, , _
-        Cast(WNDPROC, @frmRecent_Tree_SubclassProc), IDC_FRMRECENT_TREEVIEW, Cast(DWORD_PTR, @pWindow))
+        Cast(SUBCLASSPROC, @frmRecent_Tree_SubclassProc), IDC_FRMRECENT_TREEVIEW, Cast(DWORD_PTR, @pWindow))
 
    Dim As HFONT hFont = pWindow->CreateFont("Segoe UI", 9) 
    SendMessage( hTree, WM_SETFONT, Cast(WPARAM, hFont), CTRUE )

@@ -1,5 +1,5 @@
 '    WinFBE - Programmer's Code Editor for the FreeBASIC Compiler
-'    Copyright (C) 2016-2017 Paul Squires, PlanetSquires Software
+'    Copyright (C) 2016-2018 Paul Squires, PlanetSquires Software
 '
 '    This program is free software: you can redistribute it and/or modify
 '    it under the terms of the GNU General Public License as published by
@@ -85,10 +85,10 @@ Sub SaveEditorOptions()
    HWnd = HWND_FRMOPTIONSCOMPILER
    gConfig.FBWINCompiler32  = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN32) )
    gConfig.FBWINCompiler64  = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBWIN64) )
-   gConfig.AfxPath          = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTAFXPATH) )
    gConfig.CompilerSwitches = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBSWITCHES) )
    gConfig.CompilerHelpfile = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTFBHELPFILE) )
    gConfig.Win32APIHelpfile = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTWIN32HELPPATH) )
+   gConfig.WinFBXHelpfile   = AfxGetWindowText( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_TXTWINFBXHELPPATH) )
    gConfig.RunViaCommandWindow = Button_GetCheck( GetDlgItem(HWnd, IDC_FRMOPTIONSCOMPILER_CHKRUNVIACOMMANDWINDOW) )
    
    
@@ -106,7 +106,7 @@ Sub SaveEditorOptions()
    End If
    
    ' Output the config settings to disk file
-   gConfig.SaveToFile
+   gConfig.SaveConfigFile
 
 End Sub
 
@@ -333,11 +333,11 @@ Function frmOptions_Show( ByVal hWndParent As HWnd, _
    ' Configure the TreeView
    Dim hItem As HANDLE 
    hItem = FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(226,"General Options"),    0)
-           FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(110,"Code Editor"),        1)
-           FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(111,"Colors and Fonts"),   2)
-           FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(112,"Compiler Setup"),     3)
-           FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(129,"Localization"),       4)
-           FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(177,"FreeBASIC Keywords"), 5)
+   FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(110,"Code Editor"),        1)
+   FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(111,"Colors and Fonts"),   2)
+   FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(112,"Compiler Setup"),     3)
+   FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(129,"Localization"),       4)
+   FF_TreeView_InsertItem (hWndTreeview, TVI_ROOT, L(177,"FreeBASIC Keywords"), 5)
 
    ' Load all of the child dialogs
    frmOptionsGeneral_Show( pWindow->hWindow )
